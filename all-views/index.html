@@ -32,7 +32,7 @@
   --prog:#19B886;   --prog-band:#62D2AD;  --prog-soft:#DCF6ED;
   --rev:#F2B12C;    --rev-band:#F4CF6B;   --rev-soft:#FCEFD0;
   --done:#0E9E74;   --done-band:#54C29B;  --done-soft:#D6F1E6;
-  --shadow:0 40px 90px -28px rgba(20,32,42,.5), 0 14px 30px -16px rgba(20,32,42,.34);
+  --shadow:0 14px 30px -18px rgba(0,0,0,.5), 0 4px 12px -8px rgba(0,0,0,.3);
   --font:'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   width:100%; max-width:100%; display:block; position:relative; min-width:0; overflow:hidden;
@@ -42,25 +42,19 @@
 
   .vw-canvas{
     position:absolute; top:0; left:0; width:1240px; height:720px; transform-origin:top left;
-    border-radius:18px; overflow:hidden;
-    background:radial-gradient(120% 90% at 50% 0%, #20313F 0%, #182530 60%, #121C25 100%);
+    border-radius:18px; overflow:visible;
+    background:transparent;
     display:flex; align-items:center; justify-content:center; user-select:none; -webkit-user-select:none;
-  }
-  .vw-canvas::before{
-    content:''; position:absolute; inset:0;
-    background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
-                     linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
-    background-size:46px 46px; mask:radial-gradient(80% 70% at 50% 45%,#000 0%,transparent 80%);
   }
 
   /* ---- window ---- */
   .vw-win{
     position:relative; width:1136px; height:648px; background:var(--paper);
     border-radius:14px; box-shadow:var(--shadow); overflow:hidden; display:flex;
-    opacity:0; transform:translateY(16px) scale(.985);
+    opacity:0; transform:perspective(2200px) rotateY(-7deg) translateY(16px) scale(.985);
     transition:opacity .6s ease, transform .6s cubic-bezier(.22,.9,.3,1);
   }
-  .vw-win.show{opacity:1; transform:none;}
+  .vw-win.show{opacity:1; transform:perspective(2200px) rotateY(-7deg);}
 
   /* ================= SIDEBAR ================= */
   .sb{flex:0 0 208px; background:var(--navy); color:#C7D2DA; display:flex; flex-direction:column; padding:16px 0 14px;}
@@ -869,7 +863,7 @@ function boot(){
 
   function fit(){
     var cw=ROOT.clientWidth; if(!cw) return;
-    var s=Math.min(cw/1240, 1.12);
+    var s=Math.min(cw/1240, 1.12) * 0.97;
     if(s<=0) return;
     V('canvas').style.transform='scale('+s+')';
     ROOT.style.height=(720*s)+'px';
