@@ -24,7 +24,7 @@
   --terra:#E0593A; --terra-2:#D34529; --terra-soft:#FCEADF;
   --gold:#F4A52A; --gold-soft:#FDEBD2;
   --green:#16C293; --green-2:#11A87E; --green-soft:#DCF6ED; --green-line:#9FE3CC;
-  --shadow:0 40px 90px -28px rgba(20,32,42,.45), 0 14px 30px -16px rgba(20,32,42,.30);
+  --shadow:0 14px 30px -18px rgba(0,0,0,.5), 0 4px 12px -8px rgba(0,0,0,.3);
   --font:'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   width:100%; max-width:100%; display:block; position:relative; min-width:0; overflow:hidden;
@@ -37,17 +37,10 @@
   /* ---- scaling canvas ---- */
   .aa-canvas{
     position:absolute; top:0; left:0; width:1240px; height:720px; transform-origin:top left;
-    border-radius:18px; overflow:hidden;
-    background:
-      radial-gradient(120% 90% at 50% 0%, #20313F 0%, #182530 60%, #121C25 100%);
+    border-radius:18px; overflow:visible;
+    background:transparent;
     display:flex; align-items:center; justify-content:center;
     user-select:none; -webkit-user-select:none;
-  }
-  .aa-canvas::before{ /* faint grid texture on backdrop */
-    content:''; position:absolute; inset:0;
-    background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
-                     linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
-    background-size:46px 46px; mask:radial-gradient(80% 70% at 50% 45%,#000 0%,transparent 80%);
   }
 
   /* ---- modal window ---- */
@@ -498,9 +491,8 @@ function boot(){
     at(5650,()=>steps['3'].classList.add('sending'));
     at(6650,()=>{ steps['3'].classList.remove('active','sending'); steps['3'].classList.add('done'); });
 
-    // hold, then fade & loop
-    at(8600,()=>modal.classList.remove('show'));
-    at(9250,()=>{ reset(); modal.classList.add('show'); play(); });
+    // hold, then loop (le visuel reste affiché en continu)
+    at(9250,()=>{ reset(); play(); });
   }
 
   /* ---- scale to fit ---- */
