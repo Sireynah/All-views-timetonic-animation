@@ -1,1 +1,213 @@
-.
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TimeTonic — Vos données</title>
+<style>
+  :root {
+    --navy: #1C2C39;
+    --accent: #D34529;
+    --accent-rgb: 211, 69, 41;
+    --frame: #FFFFFF;
+    --frame-border: rgba(28,44,57,0.08);
+    --hdr: #F5F6F8;
+    --row-alt: #FAFBFC;
+    --line: rgba(28,44,57,0.07);
+    --text: #1C2C39;
+    --text-soft: rgba(28,44,57,0.55);
+    --text-dim: rgba(28,44,57,0.38);
+    --st-todo: #3B82C4;
+    --st-progress: #4C9A6A;
+    --st-review: #D9A441;
+    --st-done: #2F6B4F;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body { font-family: 'Manrope', system-ui, -apple-system, sans-serif; background: transparent; -webkit-font-smoothing: antialiased; overflow: hidden; }
+  .tt-stage { position: relative; width: 100%; height: 100%; min-height: 100vh; perspective: 1800px; perspective-origin: 55% 45%; overflow: hidden; }
+  .tt-scale { position: absolute; left: 50%; top: 50%; width: 600px; height: 500px; transform-origin: center center; }
+  .glow { position: absolute; transform: translate(-50%,-50%); z-index: 0; pointer-events: none; }
+  .glow-a { left: 300px; top: 250px; width: 560px; height: 500px; background: radial-gradient(closest-side, rgba(255,255,255,0.06), transparent 72%); filter: blur(8px); }
+  .glow-b { left: 360px; top: 180px; width: 320px; height: 280px; background: radial-gradient(closest-side, rgba(var(--accent-rgb),0.10), rgba(var(--accent-rgb),0) 72%); }
+  .win { position: absolute; left: 30px; top: 40px; width: 500px; background: var(--frame); border: 1px solid var(--frame-border); border-radius: 18px; box-shadow: 0 40px 90px -30px rgba(0,0,0,0.55), 0 3px 12px rgba(0,0,0,0.12); overflow: hidden; z-index: 3; }
+  .win-bar { display: flex; align-items: center; gap: 10px; padding: 13px 16px; border-bottom: 1px solid var(--line); background: #fff; }
+  .win-title { display:flex; align-items:center; gap:9px; font-size:13px; font-weight:700; color:var(--text); }
+  .win-ico { width:26px; height:26px; border-radius:8px; background:var(--navy); display:flex; align-items:center; justify-content:center; }
+  .badge { margin-left:auto; display:flex; align-items:center; gap:6px; }
+  .st-chip { font-size:10px; font-weight:700; color:#fff; padding:3px 9px; border-radius:999px; }
+  .win-tools { display:flex; align-items:center; gap:10px; padding:9px 16px; border-bottom:1px solid var(--line); background:#fff; }
+  .tool { display:flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; color:var(--text-soft); }
+  .tool.active { color:var(--text); }
+  .sheet { background:#fff; }
+  .r { display:grid; grid-template-columns: 28px 1.5fr 0.95fr 0.85fr; align-items:center; }
+  .r.head { height: 32px; background:var(--hdr); }
+  .r.row { height: 44px; border-top:1px solid var(--line); }
+  .r.row.alt { background: var(--row-alt); }
+  .r.row.litrow { background: rgba(var(--accent-rgb),0.07); box-shadow: inset 3px 0 0 var(--accent); transition: background .3s; }
+  .c { padding: 0 12px; font-size:12px; color:var(--text); }
+  .c.idx { color:var(--text-dim); font-size:10.5px; font-weight:600; text-align:center; padding:0; }
+  .hcell { font-size:9.5px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-dim); display:flex; align-items:center; gap:5px; }
+  .hcell svg { opacity:0.55; }
+  .name { font-weight:600; display:flex; align-items:center; gap:9px; font-size:12px; }
+  .tico { width:24px; height:24px; border-radius:7px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .tag { display:inline-flex; align-items:center; font-size:10px; font-weight:700; color:#fff; padding:4px 10px; border-radius:999px; }
+  .rel { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:var(--text); padding:4px 9px; border-radius:7px; background:#fff; border:1px solid var(--line); transition: background .3s, border-color .3s, box-shadow .3s; }
+  .rel .dot { width:5px; height:5px; border-radius:50%; background:var(--accent); }
+  .rel.lit { background:rgba(var(--accent-rgb),0.10); border-color:rgba(var(--accent-rgb),0.5); box-shadow:0 0 0 1px rgba(var(--accent-rgb),0.25), 0 6px 16px -6px rgba(var(--accent-rgb),0.45); }
+  .edit-cell { position:relative; }
+  .edit-box { display:inline-flex; align-items:center; padding:4px 8px; border-radius:7px; background:rgba(var(--accent-rgb),0.08); border:1.5px solid var(--accent); }
+  .caret { display:inline-block; width:1.5px; height:14px; background:var(--accent); margin-left:1px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 0%,49%{opacity:1;} 50%,100%{opacity:0;} }
+  .hist { position:absolute; z-index:20; left:0; top:0; background:var(--navy); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:9px 12px; box-shadow:0 18px 40px -14px rgba(0,0,0,0.55); opacity:0; transform:translate(60px,-28px); pointer-events:none; white-space:nowrap; }
+  .hist .h1 { font-size:11px; font-weight:700; color:#F3F5F7; display:flex; align-items:center; gap:7px; }
+  .hist .h1 .rev { font-size:9.5px; font-weight:700; color:#fff; background:rgba(var(--accent-rgb),0.9); padding:1px 6px; border-radius:5px; }
+  .hist .h2 { font-size:10px; font-weight:500; color:rgba(243,245,247,0.6); margin-top:3px; }
+  .linked { position:absolute; left:210px; top:352px; width:280px; z-index:4; background:#fff; border:1px solid var(--frame-border); border-radius:14px; padding:12px 14px; box-shadow:0 26px 55px -20px rgba(0,0,0,0.45); }
+  .linked .lt { font-size:10.5px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:7px; margin-bottom:10px; }
+  .linked .ltable { border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .linked .lr { display:grid; grid-template-columns: 1.1fr 1.1fr 0.5fr; align-items:center; }
+  .linked .lr.lhead { background:var(--hdr); }
+  .linked .lr.lhead .lc { font-size:8px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-dim); padding:5px 9px; }
+  .linked .lr:not(.lhead) { height:26px; border-top:1px solid var(--line); }
+  .linked .lc { padding:0 9px; display:flex; align-items:center; }
+  .linked .lbar { height:6px; border-radius:3px; background:rgba(28,44,57,0.12); display:inline-block; }
+  .linked .ldot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .linked .lr.lit { background:rgba(var(--accent-rgb),0.08); }
+  .linked .lr.lit .lbar { background:rgba(var(--accent-rgb),0.55); }
+  .conn { position:absolute; inset:0; z-index:5; overflow:visible; pointer-events:none; }
+  @keyframes floaty { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);} }
+  .f-linked { animation: floaty 7s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .caret, .f-linked { animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="tt-stage" id="ttStage">
+  <div class="tt-scale" id="ttScale">
+    <div class="glow glow-a"></div>
+    <div class="glow glow-b"></div>
+    <svg class="conn" viewBox="0 0 600 500" width="600" height="500" fill="none">
+      <g id="connGroup" style="opacity:0; transition:opacity .35s ease;">
+      <path d="M525,274 H562 V412 H470" stroke="rgba(211,69,41,0.5)" stroke-width="2" stroke-dasharray="0.5 6" stroke-linecap="round"/>
+      <circle r="3.4" fill="var(--accent)" style="filter:drop-shadow(0 0 5px rgba(211,69,41,0.8));">
+        <animateMotion id="relDot" dur="1.2s" begin="indefinite" fill="freeze" keyPoints="0;1" keyTimes="0;1" calcMode="linear" path="M525,274 H562 V412 H470"/>
+        <animate attributeName="opacity" dur="1.2s" begin="relDot.begin" values="0;1;1;1" keyTimes="0;0.12;0.9;1" fill="freeze"/>
+      </circle>
+      </g>
+    </svg>
+    <div class="win">
+      <div class="win-bar">
+        <div class="win-ico"><svg width="15" height="15" viewBox="0 0 24 24" style="color:#fff;"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6" fill="currentColor"></rect><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6" fill="currentColor" opacity="0.55"></rect><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6" fill="currentColor" opacity="0.55"></rect><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6" fill="currentColor" opacity="0.55"></rect></svg></div>
+        <div class="win-title">Interventions <span style="color:var(--text-dim); font-weight:500;">— Source unique</span></div>
+        <div class="badge"></div>
+      </div>
+      <div class="win-tools">
+        <div class="tool active"><svg width="12" height="12" viewBox="0 0 24 24" style="color:var(--accent);"><path d="M3 5h18M3 12h18M3 19h18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>Vue Table</div>
+        <div class="tool"><svg width="11" height="11" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Trier</div>
+        <div class="tool"><svg width="11" height="11" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/></svg>Filtrer</div>
+        <div class="tool" style="margin-left:auto;"><svg width="11" height="11" viewBox="0 0 24 24"><circle cx="12" cy="7" r="2.4" stroke="currentColor" stroke-width="1.8" fill="none"/><circle cx="12" cy="17" r="2.4" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M12 9.4v5.2" stroke="currentColor" stroke-width="1.8"/></svg>Historique</div>
+      </div>
+      <div class="sheet">
+        <div class="r head">
+          <div class="c idx"></div>
+          <div class="c hcell">Intervention</div>
+          <div class="c hcell">Statut</div>
+          <div class="c hcell"><svg width="10" height="10" viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/></svg>Site</div>
+        </div>
+        <div class="r row">
+          <div class="c idx">1</div>
+          <div class="c name"><span class="tico" style="background:rgba(47,107,79,0.12);"><svg width="13" height="13" viewBox="0 0 24 24" style="color:var(--st-done);"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Maintenance préventive</div>
+          <div class="c"><span class="tag" style="background:var(--st-done);">Clôturé</span></div>
+          <div class="c"><span class="rel"><span class="dot"></span>Site Nord</span></div>
+        </div>
+        <div class="r row alt">
+          <div class="c idx">2</div>
+          <div class="c name"><span class="tico" style="background:rgba(59,130,196,0.12);"><svg width="13" height="13" viewBox="0 0 24 24" style="color:var(--st-todo);"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 8v4l3 2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>Contrôle réglementaire</div>
+          <div class="c"><span class="tag" style="background:var(--st-todo);">Planifié</span></div>
+          <div class="c"><span class="rel"><span class="dot"></span>Site Est</span></div>
+        </div>
+        <div class="r row" id="mainRow">
+          <div class="c idx">3</div>
+          <div class="c name"><span class="tico" style="background:rgba(217,69,41,0.12);"><svg width="13" height="13" viewBox="0 0 24 24" style="color:var(--accent);"><path d="M12 3l9 16H3z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><path d="M12 10v4M12 17v0.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>Incident réseau</div>
+          <div class="c edit-cell" id="editCell">
+            <span class="tag" id="editStatic" style="background:var(--st-progress);">En cours</span>
+            <span class="edit-box" id="editBox" style="display:none;"><span id="editText" style="font-size:10px; font-weight:700; color:var(--accent);"></span><span class="caret"></span></span>
+            <div class="hist" id="hist"><div class="h1">Modifié à l'instant <span class="rev">v4</span></div><div class="h2">par J. Weber · statut → « Résolu »</div></div>
+          </div>
+          <div class="c"><span class="rel" id="relTarget"><span class="dot"></span>Site Ouest</span></div>
+        </div>
+        <div class="r row alt">
+          <div class="c idx">4</div>
+          <div class="c name"><span class="tico" style="background:rgba(217,164,65,0.14);"><svg width="13" height="13" viewBox="0 0 24 24" style="color:var(--st-review);"><path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>Audit sécurité</div>
+          <div class="c"><span class="tag" style="background:var(--st-review);">À vérifier</span></div>
+          <div class="c"><span class="rel"><span class="dot"></span>Site Sud</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="linked f-linked" id="linkedCard">
+      <div class="lt"><svg width="12" height="12" viewBox="0 0 24 24" style="color:var(--accent);"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6z" fill="currentColor" opacity="0.85"/></svg>Référentiel Sites &amp; Équipements</div>
+      <div class="ltable">
+        <div class="lr lhead"><div class="lc">Site</div><div class="lc">Équipement</div><div class="lc">État</div></div>
+        <div class="lr" id="linkedRow"><div class="lc"><span class="lbar" style="width:70%;"></span></div><div class="lc"><span class="lbar" style="width:80%;"></span></div><div class="lc"><span class="ldot" style="background:var(--st-done);"></span></div></div>
+        <div class="lr"><div class="lc"><span class="lbar" style="width:58%;"></span></div><div class="lc"><span class="lbar" style="width:66%;"></span></div><div class="lc"><span class="ldot" style="background:var(--st-review);"></span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var stage = document.getElementById('ttStage');
+  var scale = document.getElementById('ttScale');
+  var BASE_W = 600, BASE_H = 500;
+  function layout() {
+    var w = stage.clientWidth || BASE_W, h = stage.clientHeight || BASE_H;
+    var s = Math.min(w / BASE_W, h / BASE_H) * 0.98;
+    s = Math.max(s, 0.4);
+    scale.style.transform = 'translate(-50%,-50%) scale(' + s + ') rotateY(-5deg) rotateX(2deg)';
+  }
+  window.addEventListener('resize', layout);
+  if (window.ResizeObserver) new ResizeObserver(layout).observe(stage);
+  window.addEventListener('load', layout);
+  layout();
+  var editStatic = document.getElementById('editStatic'), editBox = document.getElementById('editBox'), editText = document.getElementById('editText');
+  var hist = document.getElementById('hist'), relTarget = document.getElementById('relTarget'), linkedRow = document.getElementById('linkedRow'), relDot = document.getElementById('relDot');
+  var mainRow = document.getElementById('mainRow'), connGroup = document.getElementById('connGroup');
+  var TYPE = 'Résolu';
+  function sleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+  function prefersReduced(){ return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  async function typeText(el, str){ el.textContent = ''; for (var i=0;i<str.length;i++){ el.textContent += str[i]; await sleep(75); } }
+  async function cycle(){
+    editStatic.style.display = ''; editStatic.textContent = 'En cours'; editStatic.style.background = 'var(--st-progress)';
+    editBox.style.display = 'none';
+    hist.style.transition = 'none'; hist.style.opacity = '0'; hist.style.transform = 'translate(60px,-28px)';
+    mainRow.classList.remove('litrow'); linkedRow.classList.remove('lit'); connGroup.style.opacity = '0';
+    await sleep(1400);
+    editStatic.style.display = 'none'; editBox.style.display = 'inline-flex';
+    await sleep(400); await typeText(editText, TYPE); await sleep(500);
+    editBox.style.display = 'none'; editStatic.style.display = '';
+    editStatic.textContent = 'Résolu'; editStatic.style.background = 'var(--st-done)';
+    hist.style.transition = 'opacity .4s ease, transform .4s ease';
+    hist.style.opacity = '1'; hist.style.transform = 'translate(60px,-34px)';
+    await sleep(2200);
+    hist.style.opacity = '0'; hist.style.transform = 'translate(60px,-28px)';
+    await sleep(700);
+    // 3) La ligne entière s'illumine, le connecteur apparaît, le point circule
+    mainRow.classList.add('litrow');
+    await sleep(250);
+    connGroup.style.opacity = '1';
+    if (relDot && relDot.beginElement) { try { relDot.beginElement(); } catch(e){} }
+    // le point met ~1.2s à atteindre le référentiel -> on illumine la ligne liée à l'arrivée
+    await sleep(1200);
+    linkedRow.classList.add('lit');
+    await sleep(1700);
+    // extinction
+    mainRow.classList.remove('litrow'); linkedRow.classList.remove('lit'); connGroup.style.opacity = '0';
+    await sleep(1200);
+    if (!prefersReduced()) cycle();
+  }
+  if (prefersReduced()) { mainRow.classList.add('litrow'); linkedRow.classList.add('lit'); } else { setTimeout(cycle, 800); }
+})();
+</script>
+</body>
+</html>
